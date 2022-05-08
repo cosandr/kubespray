@@ -1,0 +1,10 @@
+---
+
+external_vsphere_vcenter_ip: "{{ vault_external_vsphere_vcenter_ip }}"
+external_vsphere_vcenter_port: "443"
+external_vsphere_insecure: "true"
+external_vsphere_user: "{{ vault_external_vsphere_user }}"
+external_vsphere_password: "{{ vault_external_vsphere_password }}"
+external_vsphere_datacenter: "Home"
+external_vsphere_kubernetes_cluster_id: "vkube01"
+vsphere_csi_enabled: true
