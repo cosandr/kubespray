@@ -36,31 +36,12 @@
 - name: Kubernetes Apps | Lay Down MetalLB
   become: true
   template:
-    src: "{{ item }}.j2"
-    dest: "{{ kube_config_dir }}/{{ item }}"
+    src: "metallb.yml.j2"
+    dest: "{{ kube_config_dir }}/metallb.yml"
     mode: 0644
-  with_items: ["metallb.yml", "pools.yaml", "layer2.yaml", "layer3.yaml"]
-  register: "rendering"
+  register: "metallb_rendering"
   when:
     - "inventory_hostname == groups['kube_control_plane'][0]"
-
-- name: Kubernetes Apps | Create MetalLB resources and replace existing
-  k8s:
-    definition: "{{ lookup('template', 'metallb.yaml') }}"
-
-- name: Kubernetes Apps | Wait for MetalLB controller to be running
-  k8s_info:
-    kind: Deployment
-    namespace: metallb-system
-    name: controller
-    wait: True
-    wait_sleep: 10
-    wait_timeout: 360
-    wait_condition:
-      status: "True"
-      type: Available
-  register: result
-  until: result is not failed
 
 - name: Kubernetes Apps | Install and configure MetalLB
   kube:
@@ -68,10 +49,70 @@
     kubectl: "{{ bin_dir }}/kubectl"
     filename: "{{ kube_config_dir }}/{{ item.item }}"
     state: "{{ item.changed | ternary('latest','present') }}"
+    wait: true
   become: true
-  with_items: "{{ rendering.results }}"
+  with_items: "{{ metallb_rendering.results }}"
   when:
     - "inventory_hostname == groups['kube_control_plane'][0]"
+
+
+- name: MetalLB | Address pools
+  block:
+    - name: MetalLB | Layout address pools template
+      ansible.builtin.template:
+        src: pools.yaml.j2
+        dest: "{{ kube_config_dir }}/pools.yaml"
+        mode: 0644
+
+    - name: MetalLB | Create address pools configuration
+      kube:
+        name: "MetalLB"
+        kubectl: "{{ bin_dir }}/kubectl"
+        filename: "{{ kube_config_dir }}/pools.yaml"
+        state: "{{ item.changed | ternary('latest','present') }}"
+      become: true
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+    - metallb_config.address_pools is defined
+
+- name: MetalLB | Layer2
+  block:
+    - name: MetalLB | Layout layer2 template
+      ansible.builtin.template:
+        src: layer2.yaml.j2
+        dest: "{{ kube_config_dir }}/layer2.yaml"
+        mode: 0644
+
+    - name: MetalLB | Create layer2 configuration
+      kube:
+        name: "MetalLB"
+        kubectl: "{{ bin_dir }}/kubectl"
+        filename: "{{ kube_config_dir }}/layer2.yaml"
+        state: "{{ item.changed | ternary('latest','present') }}"
+      become: true
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+    - metallb_config.layer2 is defined
+
+- name: MetalLB | Layer3
+  block:
+    - name: MetalLB | Layout layer3 template
+      ansible.builtin.template:
+        src: layer3.yaml.j2
+        dest: "{{ kube_config_dir }}/layer3.yaml"
+        mode: 0644
+
+    - name: MetalLB | Create layer3 configuration
+      kube:
+        name: "MetalLB"
+        kubectl: "{{ bin_dir }}/kubectl"
+        filename: "{{ kube_config_dir }}/layer3.yaml"
+        state: "{{ item.changed | ternary('latest','present') }}"
+      become: true
+  when:
+    - "inventory_hostname == groups['kube_control_plane'][0]"
+    - metallb_config.layer3 is defined
+
 
 - name: Kubernetes Apps | Delete MetalLB ConfigMap
   k8s:
