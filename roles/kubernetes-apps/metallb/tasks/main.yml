@@ -116,4 +116,3 @@
     resource: ConfigMap
     namespace: metallb-system
     state: absent
-
