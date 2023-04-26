@@ -40,6 +40,7 @@ metallb_config:
 ```
 
 If you'd like to set additional nodeSelector and tolerations values, you can do so in the following fasion:
+
 ```yaml
 metallb_config:
   controller:
