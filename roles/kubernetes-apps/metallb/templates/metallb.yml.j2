@@ -1765,13 +1765,13 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-{% if metallb_config.controller.tolerations is defined %}
+{% if metallb_config.controller is defined and metallb_config.controller.tolerations is defined %}
       tolerations:
         {{ metallb_config.controller.tolerations | to_nice_yaml(indent=2) | indent(width=8) }}
 {%- endif %}
       nodeSelector:
         {{ metallb_controller_nodeselector | to_nice_yaml | indent(width=8) -}}
-        {% if metallb_config.controller.nodeselector is defined %}
+        {% if metallb_config.controller is defined and metallb_config.controller.nodeselector is defined %}
         {{ metallb_config.controller.nodeselector | to_nice_yaml | indent(width=8) -}}
         {%- endif %}
       securityContext:
@@ -1873,7 +1873,7 @@ spec:
       hostNetwork: true
       nodeSelector:
         {{ metallb_speaker_nodeselector | to_nice_yaml | indent(width=8) -}}
-        {% if metallb_config.speaker.nodeselector is defined %}
+        {% if metallb_config.speaker is defined and metallb_config.speaker.nodeselector is defined %}
         {{ metallb_config.speaker.nodeselector | to_nice_yaml | indent(width=8) -}}
         {%- endif %}
 
@@ -1881,7 +1881,7 @@ spec:
       terminationGracePeriodSeconds: 2
       tolerations:
         {{ metallb_speaker_tolerations | to_nice_yaml(indent=2) | indent(width=8) -}}
-        {% if metallb_config.speaker.tolerations is defined %}
+        {% if metallb_config.speaker is defined and metallb_config.speaker.tolerations is defined %}
         {{ metallb_config.speaker.tolerations | to_nice_yaml(indent=2) | indent(width=8) -}}
         {% endif %}
 {% endif %}
